@@ -13,8 +13,8 @@ try:
         FAIL_STATE_FILE, BATCH_STATE_FILE,
     )
 except Exception:
-    BASE_ID = "jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz"
-    TABLE_ID = "OQwqwXj"
+    BASE_ID = "REPLACE_WITH_YOUR_BASE_ID"
+    TABLE_ID = "REPLACE_WITH_TABLE_ID_AUDIT"
     _d = os.path.dirname(os.path.abspath(__file__))
     FAIL_STATE_FILE = os.path.join(_d, ".audit-failstate.json")
     BATCH_STATE_FILE = os.path.join(_d, ".batch_state")

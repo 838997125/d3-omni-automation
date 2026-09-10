@@ -10,11 +10,11 @@ try:
         NOTIFY_SENT_FILE,
     )
 except Exception:
-    ATABLE_BASE = "jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz"
-    ATABLE_TABLE = "hERWDMS"
-    NOTIFY_GROUP = "cid5wfiNs3aPtM7DpL050FRUQ=="
-    ROBOT_CODE = "dingsshadsm8rt5h7ruv"
-    STAFF_TABLE = "y89Wute"
+    ATABLE_BASE = "REPLACE_WITH_YOUR_BASE_ID"
+    ATABLE_TABLE = "REPLACE_WITH_TABLE_ID_BUDAN"
+    NOTIFY_GROUP = "REPLACE_WITH_YOUR_GROUP_CONVERSATION_ID"
+    ROBOT_CODE = "REPLACE_WITH_YOUR_ROBOT_CODE"
+    STAFF_TABLE = "REPLACE_WITH_TABLE_ID_STAFF"
     _d = os.path.dirname(os.path.abspath(__file__))
     RETRY_STATE_FILE = os.path.join(_d, "budan-retry.json")
     STALE_STATE_FILE = os.path.join(_d, "budan-stale-alert.json")

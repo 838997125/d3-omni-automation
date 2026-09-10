@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 钉钉群消息轮询监听服务
-- 每 15 秒拉取"亿民补单-测试群"最近消息
+- 每 15 秒拉取配置的通知群（D3_NOTIFY_GROUP）最近消息
 - 识别 SKU 列表 → 写入拦截表 → 回复确认
 - 识别恢复指令 → 更新状态 → 回复确认
 - 不走 LLM，零 token 消耗
@@ -25,8 +25,8 @@ try:
         PROCESSED_FILE,
     )
 except Exception:
-    GROUP_ID = "cid5wfiNs3aPtM7DpL050FRUQ=="
-    ROBOT_CODE = "dingsshadsm8rt5h7ruv"
+    GROUP_ID = "REPLACE_WITH_YOUR_GROUP_CONVERSATION_ID"
+    ROBOT_CODE = "REPLACE_WITH_YOUR_ROBOT_CODE"
     PID_FILE = "/tmp/d3-audit-listener.pid"
     LOG_FILE = "/tmp/d3-audit-listener.log"
     PROCESSED_FILE = "/tmp/d3-audit-processed.json"

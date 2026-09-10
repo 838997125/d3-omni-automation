@@ -9,8 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from d3config import ATABLE_BASE as BASE_ID, TABLE_SHORTAGE as TABLE_ID
 except Exception:
-    BASE_ID = "jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz"
-    TABLE_ID = "8FWt8wz"
+    BASE_ID = "REPLACE_WITH_YOUR_BASE_ID"
+    TABLE_ID = "REPLACE_WITH_TABLE_ID_SHORTAGE"
 
 # 字段 ID 映射
 F_ORDER_CODE = "lcgC35P"

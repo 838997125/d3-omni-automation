@@ -6,7 +6,7 @@ d3config.py —— D3 自动化套件统一配置加载器（Python 侧）
 群 ID/机器人编码硬编码进各个文件。敏感的 D3 登录密码不放在这里。
 
 配置来源优先级（后者覆盖前者）：
-  1. 内置默认值（与原始生产环境一致，保证“开箱即连同一套组织”）；
+  1. 内置占位默认值（真实值通过 scripts/config.env 提供，仓库不含任何组织信息）；
   2. scripts/config.env（部署时由 deploy/config.env.example 复制并填写）；
   3. 同名环境变量（便于临时覆盖 / CI）。
 
@@ -80,22 +80,22 @@ D3_AUDIT_POLICY_URL = _cfg(
     "D3_AUDIT_POLICY_URL",
     D3_BASE_URL + "/omni/setting/policy/new-auto-audit/save/index.html"
                   "?id=678962&action=edit")
-D3_TENANT = _cfg("D3_TENANT", "亿民盛世")
-D3_USERNAME = _cfg("D3_USERNAME", "魏鑫仪")
+D3_TENANT = _cfg("D3_TENANT", "REPLACE_WITH_YOUR_D3_TENANT")
+D3_USERNAME = _cfg("D3_USERNAME", "REPLACE_WITH_YOUR_D3_USERNAME")
 # 密码仅在显式提供时读取，默认空（浏览器通常已保存登录态）
 D3_PASSWORD = _cfg("D3_PASSWORD", "")
 
 # ---- 钉钉机器人 / 通知群 ----------------------------------------------------
-ROBOT_CODE = _cfg("D3_ROBOT_CODE", "dingsshadsm8rt5h7ruv")
-NOTIFY_GROUP = _cfg("D3_NOTIFY_GROUP", "cid5wfiNs3aPtM7DpL050FRUQ==")
-DEFAULT_AT_USER = _cfg("D3_DEFAULT_AT_USER", "216162182424059334")
+ROBOT_CODE = _cfg("D3_ROBOT_CODE", "REPLACE_WITH_YOUR_ROBOT_CODE")
+NOTIFY_GROUP = _cfg("D3_NOTIFY_GROUP", "REPLACE_WITH_YOUR_GROUP_CONVERSATION_ID")
+DEFAULT_AT_USER = _cfg("D3_DEFAULT_AT_USER", "")
 
 # ---- 钉钉多维表 ------------------------------------------------------------
-ATABLE_BASE = _cfg("D3_ATABLE_BASE", "jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz")
-TABLE_AUDIT = _cfg("D3_TABLE_AUDIT", "OQwqwXj")
-TABLE_BUDAN = _cfg("D3_TABLE_BUDAN", "hERWDMS")
-TABLE_SHORTAGE = _cfg("D3_TABLE_SHORTAGE", "8FWt8wz")
-TABLE_STAFF = _cfg("D3_TABLE_STAFF", "y89Wute")
+ATABLE_BASE = _cfg("D3_ATABLE_BASE", "REPLACE_WITH_YOUR_BASE_ID")
+TABLE_AUDIT = _cfg("D3_TABLE_AUDIT", "REPLACE_WITH_TABLE_ID_AUDIT")
+TABLE_BUDAN = _cfg("D3_TABLE_BUDAN", "REPLACE_WITH_TABLE_ID_BUDAN")
+TABLE_SHORTAGE = _cfg("D3_TABLE_SHORTAGE", "REPLACE_WITH_TABLE_ID_SHORTAGE")
+TABLE_STAFF = _cfg("D3_TABLE_STAFF", "REPLACE_WITH_TABLE_ID_STAFF")
 
 # ---- 业务常量 ---------------------------------------------------------------
 REPLACEMENT_SKU = _cfg("D3_REPLACEMENT_SKU", "FF000748")

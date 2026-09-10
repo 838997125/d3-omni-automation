@@ -13,7 +13,7 @@ try {
 } catch (_) {}
 const TASK_SPACE_NAME = 'd3-coldchain-auto'
 const ORDER_PAGE_URL = params.orderPageUrl || 'https://d3.diansan.com/omni/order/order-check/indexFeature/index.html'
-const D3_TENANT = params.tenant || '亿民盛世'
+const D3_TENANT = params.tenant || 'REPLACE_WITH_YOUR_D3_TENANT'
 const D3_USERNAME = params.username || ''
 const D3_PASSWORD = params.password || ''
 

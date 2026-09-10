@@ -108,8 +108,7 @@ $EDITOR scripts/config.env      # D3 租户/账号/密码、机器人、群、�
 
 从 `deploy/config.env.example` 复制。分两类：
 
-**A. 资源标识**（默认值是原公司「湖北四通恒远 / 亿民盛世」的钉钉组织与 D3，
-连同一套环境可直接保留；换公司/换组织才需替换）：
+**A. 资源标识**（模板里全部是 `REPLACE_WITH_...` 占位符，**必须**在 `config.env` 填成你自己的值）：
 - `D3_ROBOT_CODE` 钉钉机器人 robotCode（clientId）
 - `D3_NOTIFY_GROUP` 通知群 openConversationId
 - `D3_ATABLE_BASE` 多维表 Base ID，以及 4 张表 ID（拦截/补单/缺货/人员）

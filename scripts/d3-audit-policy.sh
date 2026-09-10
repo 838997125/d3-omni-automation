@@ -213,7 +213,7 @@ added_batch = 0
 for sku in results.get('added', []):
     rec = all_records.get(sku, {})
     cells = rec.get('cells', {})
-    submitter = cells.get('83QAPal', '张一钦')
+    submitter = cells.get('83QAPal', '')
     gtype = rec.get('type', '单品')
     pname = rec.get('name', '')
     batch = cells.get('pTAYZcr', 0)
@@ -227,7 +227,7 @@ deleted_batch = 0
 for sku in results.get('deleted', []):
     rec = all_records.get(sku, {})
     cells = rec.get('cells', {})
-    submitter = cells.get('83QAPal', '张一钦')
+    submitter = cells.get('83QAPal', '')
     gtype = rec.get('type', '单品')
     pname = rec.get('name', '')
     batch = cells.get('pTAYZcr', 0)

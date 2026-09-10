@@ -90,8 +90,8 @@
   - audit-tracker.py (钉钉表管理)
   - audit-listener.py (群消息监听)
   - sku-parser.py (SKU解析)
-- 钉钉表: base=jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz, table=OQwqwXj
-- 群: 亿民补单群 chat=chat_af916e9001aa4b3a92d3bb250bf258c2
+- 钉钉表: base=<YOUR_BASE_ID>, table=<TABLE_AUDIT>
+- 群: <通知群> chat=<YOUR_GROUP_CHAT_ID>
 - 机器人: dingtalk-robot
 
 ## ego-browser 用法

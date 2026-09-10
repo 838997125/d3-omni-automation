@@ -15,7 +15,7 @@ SKU_CODES=""
 
 # D3 登录凭据（从 config.env / 环境读取；旧 opencli 版，推荐用 ego 版 d3-coldchain-ego.sh）
 # 不再硬编码密码；D3_TENANT/D3_USERNAME/D3_PASSWORD 已由 lib-config.sh 提供
-: "${D3_TENANT:=亿民盛世}"
+: "${D3_TENANT:=REPLACE_WITH_YOUR_D3_TENANT}"
 : "${D3_USERNAME:=}"
 
 # ---------- colors ----------

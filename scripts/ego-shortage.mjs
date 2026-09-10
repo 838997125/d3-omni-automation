@@ -5,7 +5,7 @@ try { if (_fs0.existsSync('/tmp/d3-credentials.json')) _cfg = JSON.parse(_fs0.re
 
 const TASK_SPACE_NAME = 'd3-shortage-auto'
 const ORDER_PAGE_URL = _cfg.orderCheckUrl || 'https://d3.diansan.com/omni/order/order-check/indexFeature/index.html'
-const D3_TENANT = _cfg.tenant || '亿民盛世'
+const D3_TENANT = _cfg.tenant || 'REPLACE_WITH_YOUR_D3_TENANT'
 const D3_USERNAME = _cfg.username || ''
 const D3_PASSWORD = _cfg.password || ''
 const LOAD_WAIT = 600

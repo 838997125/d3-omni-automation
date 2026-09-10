@@ -406,7 +406,7 @@ if notify_items:
     # 动态获取客服人员
     CS_USER_IDS=$(get_cs_user_ids)
     if [ -z "$CS_USER_IDS" ]; then
-      CS_USER_IDS="$DEFAULT_AT_USER"  # fallback 张一钦
+      CS_USER_IDS="$DEFAULT_AT_USER"  # fallback 兜底用户
     fi
     # 构建 @文本（每个 userId 单独 @）
     CS_AT_TEXT=$(echo "$CS_USER_IDS" | tr ',' '\n' | sed 's/^/@/' | tr '\n' ' ' | sed 's/ $//')

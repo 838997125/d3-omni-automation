@@ -172,8 +172,8 @@ opencli browser d3-coldchain screenshot
 
 ### 钉钉缺货跟踪表
 
-- **所在 Base**：发货订单管理系统（`jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz`）
-- **数据表 ID**：`8FWt8wz`
+- **所在 Base**：发货订单管理系统（`<YOUR_BASE_ID>`）
+- **数据表 ID**：`<TABLE_SHORTAGE>`
 - **字段**：订单号、平台、店铺、缺货SKU、缺货商品名、需求数量、当前可用库存、状态（缺货待到货/已到货待审/已审核）、首次检测时间、预计到货时间（人工填写）、到货通知时间、审核时间、客服备注、D3订单ID
 - **状态流转**：缺货待到货 → 已到货待审 → 已审核
 - 预计到货时间由采购/人工在表中填写
@@ -187,13 +187,13 @@ opencli browser d3-coldchain screenshot
 
 ### 通知配置
 
-- 机器人：MAC糖果（robotCode=`dingsshadsm8rt5h7ruv`）
-- 群：亿民补单-测试群（`cid5wfiNs3aPtM7DpL050FRUQ==`）
+- 机器人：MAC糖果（robotCode=`<YOUR_ROBOT_CODE>`）
+- 群：<通知群>（`<YOUR_GROUP_CONVERSATION_ID>`）
 - 新缺货通知：@客服组全部人员，列出缺货品种和库存
 - 到货通知：@客服组全部人员，列出已到货订单号，提醒审单
-  - Base：发货订单管理系统（`jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz`），表 ID：`y89Wute`
+  - Base：发货订单管理系统（`<YOUR_BASE_ID>`），表 ID：`<TABLE_STAFF>`
   - 字段：平台（`6O9aB0Z`）、人员（`pbTluRY`，user 类型）
-  - 若读取失败则 fallback @张一钦
+  - 若读取失败则 fallback @<负责人>
 
 ### 关键技术点
 
@@ -223,9 +223,9 @@ opencli browser d3-coldchain screenshot
 
 ## 钉钉登记表
 
-- **多维表 Base ID**：`jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz`
-- **数据表 ID**：`hERWDMS`
-- **表格链接**：https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz?entrance=data&sheetId=hERWDMS
+- **多维表 Base ID**：`<YOUR_BASE_ID>`
+- **数据表 ID**：`<TABLE_BUDAN>`
+- **表格链接**：https://alidocs.dingtalk.com/i/nodes/<YOUR_BASE_ID>?entrance=data&sheetId=<TABLE_BUDAN>
 - **字段**：订单号（主键）、类型（三方补单/自营补单/占单）、平台/店铺、提交人、提交时间、备注/原因、处理状态、客服备注、处理结果、处理时间、处理人、D3订单ID、原始SKU、原始商品名、错误信息
 - **读取只活跃记录（服务端过滤）**：shell 查询用 `dws aitable record query --filters '{or:[eq 状态=待处理, un_exist 状态]}' --field-ids 单号,类型,提交人,状态 --all`，服务端只返回待处理/空状态的活跃记录（个位数），读量恒定、不随登记表历史增长；**回写按 recordId 定点 update**，同样与表总量无关。singleSelect 字段过滤值传选项名称（如“待处理”）。
 
@@ -301,7 +301,7 @@ v2 不再“按登记表记录逐个搜索”，改为：
 - **未同步不假成功**：待审核里找不到的单号只保留待处理，下轮再来，绝不因 processedD3Ids 非空就判去重成功。
 - **失败分级 + 告警**：
   - **未同步**(notFound，订单还没进 D3)：表格保持「待处理」、不发群消息（避免每 5 分钟刷屏），下轮自动补。
-  - **真失败**(换货/审核失败、类型冲突、类型为空/未知)：表格置「处理失败」（停止静默重试）并发群消息，**@提交人 + @客服组全员**（客服组从部门-人员对应表 Base `jb9Y4gmKWrALBykmTe2A2g3l8GXn6lpz` 表 `y89Wute` 取「平台字段 6O9aB0Z=客服」的人员字段 pbTluRY 全部 userId），标题带 ⚠️ 需人工。全部成功时只 @提交人。
+  - **真失败**(换货/审核失败、类型冲突、类型为空/未知)：表格置「处理失败」（停止静默重试）并发群消息，**@提交人 + @客服组全员**（客服组从部门-人员对应表 Base `<YOUR_BASE_ID>` 表 `<TABLE_STAFF>` 取「平台字段 6O9aB0Z=客服」的人员字段 pbTluRY 全部 userId），标题带 ⚠️ 需人工。全部成功时只 @提交人。
   - 类型冲突（同一 D3 单既登记补单又登记占单）不自动操作。
 - **群通知 SKU 取记录级**：合并单多个单号共享一套 SKU，origSku/origName 在结果的**记录级**，通知文案读记录级（订单级可能为空）。
 - **人工补发模式**：输入 JSON 支持 `{"taskSpace":"d3-budan","records":[...],"manual":[{orderCodes,type}]}`，manual 只处理 D3 不回写表格，用于回归/补单。
