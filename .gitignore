@@ -1,0 +1,31 @@
+# ===== 密钥 / 本地配置（绝不提交）=====
+scripts/config.env
+.state/
+**/.state/
+
+# ===== 运行态：台账 / 去重 / 临时文件 =====
+scripts/budan-ledger.json
+scripts/budan-ledger.*.json
+scripts/budan-ledger.bak-*.json
+scripts/budan-retry.json
+scripts/budan-stale-alert.json
+scripts/budan-notify-sent.json
+scripts/audit-people.json
+scripts/.audit-failstate.json
+scripts/.batch_state
+scripts/notify-keys.jsonl
+scripts/notify-keys.tmp
+scripts/dingtalk_users.db
+
+# ===== Python / Node 缓存 =====
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+
+# ===== 临时 / 系统 =====
+.DS_Store
+/tmp/
+*.tmp
+*.out
+*.log

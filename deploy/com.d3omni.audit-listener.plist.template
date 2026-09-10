@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  D3 自动客审拦截「群消息监听器」launchd 看门狗模板。
+  不要直接使用本文件；运行项目根目录的 install.sh，它会把占位符替换为本机
+  真实路径/用户后写入 ~/Library/LaunchAgents/com.d3omni.audit-listener.plist。
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.d3omni.audit-listener</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON3__</string>
+        <string>__INSTALL_DIR__/scripts/audit-listener.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__INSTALL_DIR__/scripts</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>__HOME_DIR__</string>
+        <key>PATH</key>
+        <string>__HOME_DIR__/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- 进程退出（崩溃/被杀）后自动拉起 -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>__INSTALL_DIR__/.state/d3-audit-listener.launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>__INSTALL_DIR__/.state/d3-audit-listener.launchd.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,21 @@
+# D3 冷链异常单 SKU 列表
+# 每行一个 SKU，# 开头为注释，空行忽略
+# 用法:
+#   $skus = (Get-Content .\d3-coldchain-skus.txt | Where-Object { $_ -notmatch '^#' -and $_.Trim() })
+#   .\Invoke-D3ColdChainException.ps1 -SkuCodes $skus
+
+24P3839
+P008580
+PP016726
+PP016725
+YPH0070
+YPH0068
+YPH0211
+YPH0210
+YPH0209
+YPH0208
+YPS0007
+PP016066
+PP016875
+YPS0009
+P009141

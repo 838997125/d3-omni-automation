@@ -1,0 +1,48 @@
+{
+  "_comment": "OpenClaw cron 定时任务定义。把 <INSTALL_DIR> 替换为本项目安装目录（例如 /Users/you/d3-omni-automation），再按 README 在 OpenClaw 里逐个创建。sessionTarget=isolated, delivery.mode=none。",
+  "jobs": [
+    {
+      "name": "d3-budan-poll",
+      "description": "每5分钟轮询钉钉补单占单登记表，自动处理补单/占单",
+      "schedule": { "kind": "every", "everyMs": 300000 },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行 bash <INSTALL_DIR>/scripts/d3-budan-process.sh，把输出贴出来。没有待处理记录就回复\"无待处理记录\"。",
+        "timeoutSeconds": 300
+      }
+    },
+    {
+      "name": "d3-out-of-stock-hourly",
+      "displayName": "D3缺货到货检测（每小时）",
+      "description": "每小时检测缺货/到货/已审核，打标并通知客服",
+      "schedule": { "kind": "cron", "expr": "20 * * * *", "tz": "Asia/Shanghai" },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "执行 D3 缺货检测：bash <INSTALL_DIR>/scripts/d3-out-of-stock-ego.sh。等待完成（2-5分钟），简要汇报新缺货/已到货/已审核各几单；报错就截取关键错误。不要做其他操作。",
+        "timeoutSeconds": 600
+      }
+    },
+    {
+      "name": "d3-coldchain-hourly",
+      "displayName": "D3冷链异常单处理（每小时，10-17点不执行）",
+      "description": "工作时段外按默认SKU列表批量标记冷链异常",
+      "schedule": { "kind": "cron", "expr": "15 0-9,18-23 * * *", "tz": "Asia/Shanghai" },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "执行 D3 冷链异常单：bash <INSTALL_DIR>/scripts/d3-coldchain-ego.sh。等待完成（1-3分钟），汇报查询条数与成功标记条数；报错截取关键错误。不要做其他操作。",
+        "timeoutSeconds": 600
+      }
+    },
+    {
+      "name": "d3-audit-policy",
+      "description": "每5分钟把群里提交的拦截SKU同步到D3自动客审拦截规则（监听器写表，本任务改D3）",
+      "schedule": { "kind": "every", "everyMs": 300000 },
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行 bash <INSTALL_DIR>/scripts/d3-audit-policy.sh 并贴出输出；无待处理商品时正常结束即可。",
+        "timeoutSeconds": 300
+      }
+    }
+  ],
+  "_listener_note": "群消息监听器不是 cron，而是 launchd 常驻服务，由 install.sh 安装（audit-listener.py，看门狗自动拉起）。"
+}
