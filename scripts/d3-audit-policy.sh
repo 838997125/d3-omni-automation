@@ -96,7 +96,6 @@ fi
 # ========== 执行 D3 操作 ==========
 step "执行 D3 操作 ..."
 printf '%s' "$PAYLOAD" > /tmp/d3-audit-payload.json
-write_d3_credentials
 RESULT=$(ego-browser nodejs < "$EXEC_SCRIPT" 2>&1) || true
 rm -f /tmp/d3-audit-payload.json
 
@@ -113,11 +112,16 @@ fi
 
 # ========== 失败熔断：同一 SKU 连续失败 3 次后停止重试，只群发一次通知 ==========
 step "失败熔断检查 ..."
-FAIL_SUMMARY=$(RESULTS_JSON="$RESULTS_JSON" TRACKER_PATH="$TRACKER" ROBOT="$ROBOT_CODE" GROUP="$NOTIFY_GROUP" python3 <<'PYEOF'
+FAIL_SUMMARY=$(RESULTS_JSON="$RESULTS_JSON" PAYLOAD_JSON="$PAYLOAD" TRACKER_PATH="$TRACKER" SCRIPTS_DIR="$SCRIPT_DIR" ROBOT="$ROBOT_CODE" GROUP="$NOTIFY_GROUP" python3 <<'PYEOF'
 import json, os, subprocess, sys
 
 tracker = os.environ['TRACKER_PATH']
 results = json.loads(os.environ['RESULTS_JSON'])
+try:
+    payload = json.loads(os.environ.get('PAYLOAD_JSON') or '{}')
+except Exception:
+    payload = {}
+restore_skus = set(payload.get('delete', []))
 
 def tracker_cmd(*args, stdin_data=None):
     try:
@@ -127,13 +131,24 @@ def tracker_cmd(*args, stdin_data=None):
     except Exception:
         return {}
 
+def people_targets(skus, roles):
+    try:
+        r = subprocess.run(
+            [sys.executable, os.path.join(os.environ['SCRIPTS_DIR'], 'audit-people.py'), 'targets'],
+            input=json.dumps({'skus': skus, 'roles': roles}, ensure_ascii=False),
+            capture_output=True, text=True, timeout=15)
+        return json.loads(r.stdout) if r.stdout.strip() else []
+    except Exception:
+        return []
+
 # 成功/已存在的 SKU 清除失败计数
 for sku in results.get('added', []) + results.get('deleted', []) + results.get('skipped', []):
     tracker_cmd('fail-reset', sku)
 
 # 错误 SKU 累计失败次数
-newly_broken = []
+newly_broken = []        # 拦截添加失败熔断
 err_skus = []
+restore_broken = []     # 恢复删除失败熔断（需置「是否最新=否」）
 for err in results.get('errors', []):
     sku = err.split(':', 1)[0].strip()
     if not sku:
@@ -144,27 +159,55 @@ for err in results.get('errors', []):
     res = tracker_cmd('fail-incr', sku, 'op', stdin_data=err)
     if res.get('broken') and not res.get('already_broken'):
         newly_broken.append({'sku': sku, 'error': err, 'count': res.get('count')})
+        if sku in restore_skus:
+            restore_broken.append(sku)
+
+# 恢复连续 3 次失败：活跃行置「是否最新=否」（状态保持待恢复），cron 不再捡拾，转人工
+if restore_broken:
+    for sku in restore_broken:
+        err = next((e for e in results.get('errors', []) if e.split(':', 1)[0].strip() == sku), '恢复失败')
+        tracker_cmd('mark-stale', stdin_data=json.dumps({'skus': [sku], 'error': err}, ensure_ascii=False))
 
 all_broken = bool(err_skus) and all(
     (tracker_cmd('fail-list').get(s, {}) or {}).get('broken') for s in err_skus)
 
 # 刚达到熔断阈值：只发这一次群通知，之后静默直到人工处理/重新提交
 if newly_broken:
-    lines = ['⚠️ 自动客审拦截连续失败，已暂停自动重试，需人工处理：', '']
+    # 恢复失败 @全部提交人+恢复发起人；拦截失败 @提交人
+    at_skus_r = [it['sku'] for it in newly_broken if it['sku'] in restore_skus]
+    at_skus_a = [it['sku'] for it in newly_broken if it['sku'] not in restore_skus]
+    targets = []
+    _seen = set()
+    for _t in people_targets(at_skus_r, ['submitters', 'restorers']) + people_targets(at_skus_a, ['submitters']):
+        if _t.get('open_id') and _t['open_id'] not in _seen:
+            _seen.add(_t['open_id'])
+            targets.append(_t)
+    at_ids = ','.join(t['open_id'] for t in targets)
+
+    lines = []
+    if at_ids:
+        lines += [' '.join(f'@{t["open_id"]}' for t in targets), '']
+    lines.append('⚠️ 自动客审拦截连续失败，已暂停自动重试，需人工处理：')
+    lines.append('')
     for it in newly_broken:
-        lines.append(f"• {it['sku']}（连续 {it['count']} 次失败）")
+        kind = '恢复删除失败' if it['sku'] in restore_skus else '拦截添加失败'
+        tail = '，该记录已置为非最新（默认视图不再显示），请到「需人工处理」视图查看' if it['sku'] in restore_skus else ''
+        lines.append(f"• {it['sku']}（{kind}，连续 {it['count']} 次失败{tail}）")
         lines.append(f"  {it['error'][:120]}")
     lines.append('')
-    lines.append('常见原因：D3 中无此编码（SKU*数量 格式的套装 D3 常未建档）。请在 D3 自动客审页面确认编码后手动添加，或在拦截表中调整该记录；重新提交后会自动恢复重试。')
+    lines.append('常见原因：D3 中无此编码（SKU*数量 格式的套装 D3 常未建档）。请在 D3 自动客审页面确认编码后手动处理；重新提交后会自动恢复重试。')
+    cmd = ['dws', 'chat', 'message', 'send-by-bot',
+           '--robot-code', os.environ['ROBOT'], '--group', os.environ['GROUP'],
+           '--title', '自动客审拦截熔断通知', '--text', '  \n'.join(lines)]
+    if at_ids:
+        cmd += ['--at-open-dingtalk-ids', at_ids]
     try:
-        subprocess.run(['dws', 'chat', 'message', 'send-by-bot',
-                        '--robot-code', os.environ['ROBOT'], '--group', os.environ['GROUP'],
-                        '--title', '自动客审拦截熔断通知', '--text', '  \n'.join(lines)],
-                       capture_output=True, text=True, timeout=15)
+        subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     except Exception:
         pass
 
-print(json.dumps({'newly_broken': len(newly_broken), 'all_broken': all_broken}, ensure_ascii=False))
+print(json.dumps({'newly_broken': len(newly_broken), 'restore_broken': restore_broken,
+                  'all_broken': all_broken}, ensure_ascii=False))
 PYEOF
 )
 echo "  $FAIL_SUMMARY"

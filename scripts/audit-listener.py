@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 钉钉群消息轮询监听服务
-- 每 15 秒拉取配置的通知群（D3_NOTIFY_GROUP）最近消息
+- 每 15 秒拉取"亿民补单-测试群"最近消息
 - 识别 SKU 列表 → 写入拦截表 → 回复确认
 - 识别恢复指令 → 更新状态 → 回复确认
 - 不走 LLM，零 token 消耗
@@ -17,6 +17,7 @@ try:
 except Exception:
     notify_ledger = None
 
+sys.path.insert(0, SCRIPT_DIR)
 try:
     from d3config import (
         NOTIFY_GROUP as GROUP_ID, ROBOT_CODE,
@@ -254,47 +255,71 @@ def handle_sku_message(text, sender_name, sender_open_id):
     }
     result = tracker_cmd("create", stdin_data=json.dumps(create_data, ensure_ascii=False))
 
-    # 记录提交人（按 SKU），供日后拦截/恢复通知 @ 用
-    # 注意：只记录本次新建的 SKU；已存在被跳过的保留原提交人，不要被重发者覆盖
-    people_cmd("set-submitter", {
-        "skus": [it["sku"] for it in items if it["sku"] in set(result.get("created", []) if result else [])],
-        "name": sender_name or "",
-        "open_id": sender_open_id or "",
-    })
+    if not result:
+        return
 
-    if result:
-        created = result.get("created", [])
-        skipped = result.get("skipped", [])
-        skipped_detail = result.get("skipped_detail", [])
-        batch_no = result.get("batch_no")  # 本轮实际分配到的批次号（无新建时为 None）
-        if not created:
-            # 全是已存在的 SKU。能走到这里的都是真人提交（系统告警已被 is_system_alert 拦掉），
-            # 给提交人一句轻量反馈，避免“发了没反应”被误以为机器人漏检；不分配批次号、不刷批次。
-            if skipped_detail:
-                head = skipped_detail[0]
-                more = f"等 {len(skipped_detail)} 个" if len(skipped_detail) > 1 else ""
-                btxt = f"（批次 #{head['batch']}）" if head.get("batch") else ""
-                nm = f" {head['name']}" if head.get("name") else ""
-                send_group_message(
-                    f"ℹ️ {head['sku']}{nm}{more} 已在自动客审拦截列表中{btxt}，状态：{head.get('status','')}，无需重复提交。\n"
-                    f"如需放开拦截，回复「恢复 #{head['batch']}」即可。",
-                    at_open_ids=sender_open_id)
-                log(f"重复提交反馈: 录入 0 个, 跳过 {len(skipped)} 个（已在拦截列表，已提示提交人，不耗批次号）")
-            else:
-                log(f"提交处理: 录入 0 个, 跳过 {len(skipped)} 个（无明细，不发群）")
-            return
-        lines = [
-            f"✅ 已录入 {len(created)} 个商品到拦截列表（批次 #{batch_no}）",
-            f"单品 {single_count} 个 / 套装 {combo_count} 个",
-        ]
-        if batch_remark:
-            lines.append(f"备注：{batch_remark}")
-        if skipped:
-            lines.append(f"已存在跳过：{len(skipped)} 个")
-        lines.append("")
-        lines.append(f"处理完成后回复「恢复 #{batch_no}」即可删除拦截规则")
-        send_group_message("\n".join(lines), at_open_ids=sender_open_id)
-        log(f"批次 #{batch_no}: 录入 {len(created)} 个, 跳过 {len(skipped)} 个")
+    created = result.get("created", [])
+    skipped = result.get("skipped", [])
+    skipped_detail = result.get("skipped_detail", [])
+    cancelled = result.get("restored_cancelled", [])
+    batch_no = result.get("batch_no")  # 本轮实际分配到的批次号（无新建时为 None）
+
+    # 人员台账：新建的 SKU 重置提交人（新一轮拦截，清空旧恢复人）；
+    # 已活跃的 SKU 追加提交人；撤销恢复的同时作废旧恢复人。恢复通知会 @ 全部提交人+发起人。
+    if created:
+        people_cmd("set-submitter", {
+            "skus": created, "name": sender_name or "", "open_id": sender_open_id or "",
+        })
+    if skipped:
+        people_cmd("add-submitter", {
+            "skus": [s for s in skipped if s not in set(cancelled)],
+            "name": sender_name or "", "open_id": sender_open_id or "",
+        })
+    if cancelled:
+        # 只有撤销恢复的 SKU 才清空旧恢复人（恢复未发生，旧发起人作废）
+        people_cmd("add-submitter", {
+            "skus": cancelled, "name": sender_name or "", "open_id": sender_open_id or "",
+            "clear_restorers": True,
+        })
+
+    if not created:
+        # 全是已活跃的 SKU。能走到这里的都是真人提交（系统告警已被 is_system_alert 拦掉），
+        # 给提交人一句轻量反馈，避免“发了没反应”被误以为机器人漏检；不新建行、不耗批次号。
+        if cancelled:
+            head = next((d for d in skipped_detail if d.get("reason") == "restore_cancelled"), skipped_detail[0])
+            more = f"等 {len(cancelled)} 个" if len(cancelled) > 1 else ""
+            send_group_message(
+                f"↩️ {head['sku']}{more} 此前已发起恢复，现按新提交继续保持拦截，已把你追加为提交人。\n"
+                f"后续恢复时会 @ 全部提交人。",
+                at_open_ids=sender_open_id)
+            log(f"撤销恢复并追加提交人: {len(cancelled)} 个; 其他重复 {len(skipped)-len(cancelled)} 个")
+        elif skipped_detail:
+            head = skipped_detail[0]
+            more = f"等 {len(skipped_detail)} 个" if len(skipped_detail) > 1 else ""
+            btxt = f"（批次 #{head['batch']}）" if head.get("batch") else ""
+            nm = f" {head['name']}" if head.get("name") else ""
+            send_group_message(
+                f"ℹ️ {head['sku']}{nm}{more} 已在自动客审拦截列表中{btxt}，状态：{head.get('status','')}，无需重复提交。\n"
+                f"已把你追加为提交人，恢复时会一并 @ 你。",
+                at_open_ids=sender_open_id)
+            log(f"重复提交反馈: 新建 0 个, 已活跃 {len(skipped)} 个（追加提交人，不耗批次号）")
+        else:
+            log(f"提交处理: 新建 0 个, 已活跃 {len(skipped)} 个（无明细，不发群）")
+        return
+
+    lines = [
+        f"✅ 已录入 {len(created)} 个商品到拦截列表（批次 #{batch_no}）",
+        f"单品 {single_count} 个 / 套装 {combo_count} 个",
+    ]
+    if batch_remark:
+        lines.append(f"备注：{batch_remark}")
+    if skipped:
+        tail = f"（其中 {len(cancelled)} 个撤销恢复继续拦截）" if cancelled else ""
+        lines.append(f"已在拦截列表（已追加提交人）：{len(skipped)} 个{tail}")
+    lines.append("")
+    lines.append(f"处理完成后回复「恢复 #{batch_no}」即可删除拦截规则")
+    send_group_message("\n".join(lines), at_open_ids=sender_open_id)
+    log(f"批次 #{batch_no}: 新建 {len(created)} 个, 已活跃 {len(skipped)} 个, 撤销恢复 {len(cancelled)} 个")
 
 
 def handle_restore_message(text, sender_name, sender_open_id):
